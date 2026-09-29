@@ -26,3 +26,12 @@
   .service-panel{width:100%;padding:22px 18px}
   .floating-tools{right:14px;bottom:78px}
 }
+
+
+/* Home: interoperabilidade sem perder o respiro visual */
+.home-attention-link{margin-top:16px;display:inline-flex;align-items:center;gap:8px;color:#5f36ee;text-decoration:none;font-size:14px;font-weight:600}
+.home-attention-link span{color:#5f36ee}
+.home-attention-link:hover{gap:11px}
+.home-attention-link svg:first-child{color:#e06b2d}
+.panel-head.inline>div{min-width:0}
+.panel-head.inline>div h2{margin-bottom:2px}

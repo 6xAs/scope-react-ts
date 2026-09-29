@@ -1,7 +1,8 @@
 import {ExternalLink,Plus,Search,X} from 'lucide-react'
-import {useMemo,useState} from 'react'
+import {useEffect,useMemo,useState} from 'react'
 import {PageTabs} from '../components/PageTabs'
-import {assignments,serviceShortcuts} from '../data/mock'
+import {getUnifiedServiceCatalog,getUnifiedWorkItems,sourceLabel} from '../integrations'
+import type{ServiceCatalogItem,WorkItem} from '../integrations/types'
 import {StatusPill} from '../components/StatusPill'
 
 const tabs=['Últimas Movimentações','Atenção','Atribuições','Solicitações','Atendimentos']
@@ -10,16 +11,25 @@ export function Assignments(){
   const [active,setActive]=useState(tabs[0])
   const [catalogOpen,setCatalogOpen]=useState(false)
   const [query,setQuery]=useState('')
+  const [items,setItems]=useState<WorkItem[]>([])
+  const [catalog,setCatalog]=useState<ServiceCatalogItem[]>([])
+
+  useEffect(()=>{
+    Promise.all([getUnifiedWorkItems(),getUnifiedServiceCatalog()]).then(([workItems,services])=>{
+      setItems(workItems)
+      setCatalog(services)
+    })
+  },[])
 
   const list=useMemo(()=>{
-    if(active==='Últimas Movimentações') return assignments.slice(0,4)
-    if(active==='Atenção') return assignments.filter(item=>item.attention)
-    if(active==='Atribuições') return assignments.filter(item=>item.kind==='atribuicao')
-    if(active==='Solicitações') return assignments.filter(item=>item.kind==='solicitacao')
-    return assignments.filter(item=>item.kind==='atendimento')
-  },[active])
+    if(active==='Últimas Movimentações') return items.slice(0,4)
+    if(active==='Atenção') return items.filter(item=>item.attention)
+    if(active==='Atribuições') return items.filter(item=>item.kind==='atribuicao')
+    if(active==='Solicitações') return items.filter(item=>item.kind==='solicitacao')
+    return items.filter(item=>item.kind==='atendimento')
+  },[active,items])
 
-  const services=serviceShortcuts.filter(service=>{
+  const services=catalog.filter(service=>{
     const term=query.trim().toLowerCase()
     if(!term) return true
     return service.title.toLowerCase().includes(term)||service.description.toLowerCase().includes(term)
@@ -38,15 +48,15 @@ export function Assignments(){
 
     <div className="cards-grid assignment-grid">
       {list.map(item=><article className="assignment-card" key={item.id}>
-        <div className="source-badge">{item.source}</div>
+        <div className="source-badge">{sourceLabel(item.source)}</div>
         <h3>{item.title}</h3>
-        <p>{item.subtitle}</p>
+        <p>{item.description}</p>
         <StatusPill>{item.status}</StatusPill>
         <div className="assignment-note">Última movimentação registrada {item.updated}.</div>
         <small>{item.owner}</small>
-        <a className="primary small link-btn" href={item.externalUrl} target="_blank" rel="noreferrer">
+        {item.externalUrl&&<a className="primary small link-btn" href={item.externalUrl} target="_blank" rel="noreferrer">
           <ExternalLink size={15}/>{item.actionLabel??'Abrir origem'}
-        </a>
+        </a>}
       </article>)}
     </div>
 
@@ -71,7 +81,7 @@ export function Assignments(){
               <strong>{service.title}</strong>
               <small>{service.description}</small>
             </div>
-            <span>{service.source}</span>
+            <span>{sourceLabel(service.source)}</span>
           </a>)}
         </div>
       </section>
